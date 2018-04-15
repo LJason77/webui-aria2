@@ -13,11 +13,14 @@ aria2c --enable-rpc --rpc-listen-all
 
 If aria2 is not installed in your local machine then head on to https://aria2.github.io/ and follow the instructions there.
 
-Then download the webui, you can either do that by downloading this repository and running index.html in the browser. Or you could just head on to http://ziahamza.github.io/webui-aria2/ and just start downloading files! After that you can also save it for offline use by saving from the browser save page as option.
+Then download the webui, you can either do that by downloading this repository and running index.html in the browser. Or you could just head on to https://ziahamza.github.io/webui-aria2/ and just start downloading files! After that you can also save it for offline use by saving from the browser save page as option. You can also use node js to create simple server by using the following command from the download folder.
+````bash
+node node-server.js
+````
 
 Tips
 ====
-1. You can always select which files to download in case of torrents or metalinks. Just pause a download and a list icon should appear next to the settings button. To select which files to download before starting the download, give the flag --pause-metadata to aria2. See [link](http://aria2.sourceforge.net/manual/en/html/aria2c.html#cmdoption--pause-metadata)
+1. You can always select which files to download in case of torrents or metalinks. Just pause a download and a list icon should appear next to the settings button. To select which files to download before starting the download, give the flag --pause-metadata to aria2. See [link](https://aria2.github.io/manual/en/html/aria2c.html#cmdoption--pause-metadata)
 
 Configuration
 =============
@@ -60,23 +63,32 @@ sudo docker run -v /Downloads:/data -p 6800:6800 -p 9100:8080 --name="webui-aria
 
 This image contains both aria2 and webui-aria2.
 
-Build it (may take several hours due to the aria2 compilation process. Don't panic and grap a coffee)
+Build it (may take several hours due to the aria2 compilation process. Don't panic and grab a coffee)
 ```
-docker build -f rpi-Dockerfile -t yourname/webui-aria2 .
+docker build -f Dockerfile.arm -t yourname/webui-aria2 .
 ```
 Prepare the host volume:
-This image required few file to be mounted in the container's `/data` folder.
+This image required few file to be mounted in the container.
 ```
-.aria2/session.txt  (empty file)
-.aria2/aria2.log    (empty file)
-.aria2/aria2.conf   (aria2 configuration file, not webui-aria2 conf)
-./downloads/        (where the downloaded files goes)
+/home/aria/aria2/session.txt  (empty file)
+/home/aria/aria2/aria2.log    (empty file)
+/home/aria/aria2/aria2.conf   (aria2 configuration file, not webui-aria2 conf) must contains at least `enable-rpc=true` and `rpc-listen-all=true`
+/data/downloads/        (where the downloaded files goes)
 ```
 
 Run it
 ```
-docker run --restart=always -d -v /home/<USER>/data/aria2:/data -p 6800:6800 -p 9100:8080 --name="webui-aria2" yourname/webui-aria2
+docker run --restart=always \
+        -v /home/<USER>/data/aria2/downloads:/data/downloads \
+        -v /home/<USER>/data/aria2/.aria2:/home/aria/.aria2 \
+        -p 6800:6800 -p 9100:8080 \
+        --name="webui-aria2" \
+        -d yourname/webui-aria2
 ```
+
+Deploy to Heroku
+==============
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
 Support
 =======

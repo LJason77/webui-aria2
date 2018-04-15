@@ -8,6 +8,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0A8476">
 
   <title ng-bind="$root.pageTitle">Aria2 WebUI</title>
 
@@ -26,6 +27,7 @@
   <script src="js/libs/angular.min.js"></script>
 
   <script src="js/libs/angularui-bootstrap-tpls.min.js"></script>
+  <script src="js/libs/bootstrap-filestyle.js"></script>
 
   <script src="js/libs/jquery.flot.min.js"></script>
   <script src="js/libs/jquery.flot.time.min.js"></script>
@@ -40,6 +42,7 @@
 
   <script src="js/directives/chunkbar.js"></script>
   <script src="js/directives/dgraph.js"></script>
+  <script src="js/directives/fileselect.js"></script>
   <script src="js/directives/fselect.js"></script>
   <script src="js/directives/textarea.js"></script>
 
@@ -84,6 +87,9 @@
   <script src="js/translate/ru_RU.js"></script>
   <script src="js/translate/it_IT.js"></script>
   <script src="js/translate/tr_TR.js"></script>
+  <script src="js/translate/cs_CZ.js"></script>
+  <script src="js/translate/fa_IR.js"></script>
+  <script src="js/translate/id_ID.js"></script>
 </head>
 <!-- }}} -->
 
@@ -118,7 +124,7 @@
           <ul class="dropdown-menu">
             <li>
               <a href="#" ng-click="addUris()">
-                <span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{ 'By URIs' | translate }}
+                <span class="fa fa-fw fa-link">&nbsp;</span> {{ 'By URIs' | translate }}
               </a>
             </li>
             <li ng-show="isFeatureEnabled('BitTorrent') && enable.torrent">
@@ -179,13 +185,13 @@
             <li>
               <a
                 ng-click="changeCSettings()"
-                href="#"><span class="fa fa-fw fa-wrench">&nbsp;</span> {{ 'Connection Settings' | translate }}</a>
+                href="#"><span class="fa fa-fw fa-cog">&nbsp;</span> {{ 'Connection Settings' | translate }}</a>
             </li>
 
             <li>
               <a
                 ng-click="changeGSettings()"
-                href="#"><span class="fa fa-fw fa-wrench">&nbsp;</span> {{ 'Global Settings' | translate }}</a>
+                href="#"><span class="fa fa-fw fa-cogs">&nbsp;</span> {{ 'Global Settings' | translate }}</a>
             </li>
 
             <li>
@@ -286,6 +292,21 @@
             <a
                       ng-click="changeLanguage('tr_TR')"
                       href="#"><span class="fa fa-fw flag-icon flag-icon-tr">&nbsp;</span> Turkish</a>
+            </li>
+            <li>
+            <a
+                      ng-click="changeLanguage('cs_CZ')"
+                      href="#"><span class="fa fa-fw flag-icon flag-icon-cz">&nbsp;</span> Czech</a>
+            </li>
+            <li>
+            <a
+                      ng-click="changeLanguage('fa_IR')"
+                      href="#"><span class="fa fa-fw flag-icon flag-icon-ir">&nbsp;</span> Farsi</a>
+            </li>
+            <li>
+            <a
+                      ng-click="changeLanguage('id_ID')"
+                      href="#"><span class="fa fa-fw flag-icon flag-icon-id">&nbsp;</span> Indonesian</a>
             </li>
           </ul>
         </li>
@@ -412,8 +433,9 @@
         <li ng-repeat="prop in properties" class="form-group">
           <label title="{{prop.desc}}" style="width: 100%;">{{prop.name}}</label>
           <div class="form-group">
-            <select style="width: 100%;" ng-show="prop.options.length" class="form-control" ng-options="opt for opt in prop.options" ng-model="prop.val"></select>
-            <input style="width: 100%;" ng-show="!prop.options.length" type="text" class="form-control input-large" ng-model="prop.val"/>
+            <select style="width: 100%;" ng-show="prop.options.length && !prop.multiline" class="form-control" ng-options="opt for opt in prop.options" ng-model="prop.val"></select>
+            <input style="width: 100%;" ng-show="!prop.options.length && !prop.multiline" type="text" class="form-control input-large" ng-model="prop.val"/>
+            <textarea style="width: 100%;" ng-show="prop.multiline" ng-model="prop.val"></textarea>
           </div>
         </li>
         <li>
@@ -560,6 +582,14 @@
             <span title="{{ 'Downloaded' | translate }}"><span class="fa fa-fw fa-arrow-circle-o-down">&nbsp;</span> {{download.fmtCompletedLength}}</span>
           </li>
 
+          <li class="label label-active hidden-phone">
+            <span title="{{ 'Uploaded' | translate }}"><span class="fa fa-fw fa-upload">&nbsp;</span> {{download.fmtUploadLength}}</span>
+          </li>
+
+          <li class="label label-active hidden-phone">
+            <span title="{{ 'Ratio' | translate }}">{{ 'Ratio' | translate }}&nbsp;{{getRatio(download)}}</span>
+          </li>
+
           <li class="label label-active hidden-phone hidden-tablet">
             <span title="{{ 'Progress' | translate }}"><span class="fa fa-fw fa-chevron-right">&nbsp;</span> {{getProgress(download)}}%</span>
           </li>
@@ -686,6 +716,14 @@
             <span title="{{ 'Download Size' | translate }}"><span class="fa fa-fw fa-cloud-download">&nbsp;</span> {{download.fmtTotalLength}}</span>
           </li>
 
+          <li class="label label-active hidden-phone">
+            <span title="{{ 'Uploaded' | translate }}"><span class="fa fa-fw fa-upload">&nbsp;</span> {{download.fmtUploadLength}}</span>
+          </li>
+
+          <li class="label label-active hidden-phone">
+            <span title="{{ 'Ratio' | translate }}">{{ 'Ratio' | translate }}&nbsp;{{getRatio(download)}}</span>
+          </li>
+
           <li class="label label-success hidden-phone">
             <span title="{{ 'Download Path' | translate }}"><span class="fa fa-fw fa-folder-open">&nbsp;</span> {{download.dir}}</span>
           </li>
@@ -748,6 +786,7 @@
 
             <li class="label label-default" title="{{ 'Upload Speed' | translate }}" ng-show="download.bittorrent"><i class="fa fa-fw fa-arrow-circle-o-up">&nbsp;</i> <span class="download-uploadSpeed">{{download.fmtUploadSpeed}}</span></li>
             <li class="label label-default" title="{{ 'Uploaded' | translate }}" ng-show="download.bittorrent"><i class="fa fa-fw fa-upload">&nbsp;</i> <span class="download-uploadLength">{{download.fmtUploadLength}}</span></li>
+            <li class="label label-default" title="{{ 'Ratio' | translate }}" ng-show="download.bittorrent"><span title="{{ 'Ratio' | translate }}">{{ 'Ratio' | translate }}&nbsp;{{getRatio(download)}}</span></li>
 
             <li class="label label-default" title={{download.connectionsTitle}}><i class="fa fa-fw fa-link">&nbsp;</i> <span class="download-connections">{{download.connections}}{{download.numSeeders}}</span></li>
 
@@ -827,9 +866,10 @@
               <label class="col-sm-3 control-label">{{name}}</label>
 
               <div class="col-sm-9 controls">
-                <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+                <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
                 </select>
-                <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+                <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+                <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
               </div>
               <br />
             </div>
@@ -847,9 +887,10 @@
 
               <label class="col-sm-3 control-label">{{name}}</label>
               <div class="col-sm-9 controls">
-                <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+                <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
                 </select>
-                <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+                <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+                <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
               </div>
               <br />
             </div>
@@ -881,7 +922,7 @@
       <div class="form-horizontal form-group">
         <label class="control-label" style="text-align: left;"><b>{{ 'Select a Torrent' | translate }}:</b></label>
         <div class="controls">
-          <input type="file" class="input-xlarge" fselect="getTorrents.files" multiple/>
+          <input type="file" fselect="getTorrents.files" multiple />
         </div>
       </div>
       <br />
@@ -895,9 +936,10 @@
             <label class="col-sm-3 control-label">{{name}}</label>
 
             <div class="col-sm-9 controls">
-              <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+              <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
               </select>
-              <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
             </div>
             <br />
           </div>
@@ -915,9 +957,10 @@
 
             <label class="col-sm-3 control-label">{{name}}</label>
             <div class="col-sm-9 controls">
-              <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+              <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
               </select>
-              <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
             </div>
             <br />
           </div>
@@ -948,7 +991,7 @@
       <div class="form-horizontal form-group">
         <label class="control-label" style="text-align: left;"><b>{{ 'Select a Metalink' | translate }}:</b></label>
         <div class="controls">
-          <input type="file" class="input-xlarge" fselect="getMetalinks.files" multiple/>
+          <input type="file" fselect="getMetalinks.files" multiple />
         </div>
       </div>
       <br />
@@ -962,9 +1005,10 @@
             <label class="col-sm-3 control-label">{{name}}</label>
 
             <div class="col-sm-9 controls">
-              <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+              <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
               </select>
-              <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
             </div>
             <br />
           </div>
@@ -982,9 +1026,10 @@
 
             <label class="col-sm-3 control-label">{{name}}</label>
             <div class="col-sm-9 controls">
-              <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+              <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
               </select>
-              <input ng-show="!set.options.length" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xxlarge modal-form-input-verylarge" ng-model="set.val"/>
+              <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
             </div>
             <br />
           </div>
@@ -999,6 +1044,39 @@
 </script>
 <!-- }}} -->
 
+<!-- {{{ select files checkbox modal -->
+<script type="text/ng-template" id="selectFilesCheckBox.html">
+  <div ng-repeat="(folderName,folder) in files.dirs">
+    <!--recursive folder-->
+
+    <div class="controls">
+      <!--click to toggle show the subfolders and files-->
+      <div class="checkbox" data-ng-click="folder.show=!folder.show">
+        <!-- The value of indeterminate="" can be bound to any angular expression -->
+        <input type="checkbox" data-ng-model="folder.selected" data-ng-click="$event.stopPropagation()" indeterminate/>{{folderName}}
+        <span ng-show="!folder.show" class="control-label">{{ 'click the text to expand the folder' | translate }}</span>
+        <span ng-show="folder.show" class="control-label">{{ 'click the text to collapse the folder' | translate }}</span>
+      </div>
+      <div ng-show="folder.show" class="form-group selectFiles recursivedir" ng-include="'selectFilesCheckBox.html'" ng-init="files=folder">
+      </div>
+    </div>
+  </div>
+
+  <div ng-repeat="file in files.files">
+    <!--files-->
+    <label class="control-label">{{ 'Select to download' | translate }}</label>
+
+    <div class="controls">
+      <label class="checkbox">
+        <input type="checkbox" data-ng-model="file.selected" indeterminate="false"/>{{file.relpath}}
+      </label>
+    </div>
+    <br/>
+    <br/>
+  </div>
+</script>
+<!-- }}} -->
+
 <!-- {{{ select file modal -->
 <script type="text/ng-template" id="selectFiles.html">
   <div class="modal-header">
@@ -1008,17 +1086,7 @@
 
   <form class="form-horizontal modal-body">
     <fieldset>
-      <div class="form-group selectFiles">
-        <div ng-repeat="file in selectFiles.files">
-          <label class="control-label">{{ 'Select to download' | translate }}</label>
-
-          <div class="controls">
-            <label class="checkbox">
-              <input type="checkbox" ng-model="file.selected"/>{{file.relpath}}
-            </label>
-          </div>
-          <br /><br />
-        </div>
+      <div class="form-group selectFiles" ng-include="'selectFilesCheckBox.html'" ng-init="files=selectFiles.groupedFiles">
       </div>
     </fieldset>
   </form>
@@ -1038,15 +1106,22 @@
   </div>
 
   <div class="modal-body">
-    <form class="form-horizontal">
+    <div class="row">
+      <div class="col-md-12 form-group filter-input-group">
+        <input type="text" class="form-control input-xlarge" ng-model="propFilter" placeholder="{{ 'Filter' | translate }}"/>
+        <span class="clear-button" ng-show="propFilter" ng-click="propFilter = ''">X</span>
+      </div>
+    </div>
+    <form class="form-horizontal">                  
       <fieldset>
-        <div class="form-group" ng-repeat="(name, set) in settings.settings">
+        <div class="form-group" ng-repeat="(name, set) in settings.settings | objFilter:propFilter">
           <label class="col-sm-3 control-label">{{name}}</label>
 
           <div class="col-sm-9 controls">
-            <select class="form-control" ng-show="set.options.length" ng-options="opt for opt in set.options" ng-model="set.val">
+            <select class="form-control" ng-show="set.options.length && !set.multiline" ng-options="opt for opt in set.options" ng-model="set.val">
             </select>
-            <input ng-show="!set.options.length" type="text" class="form-control input-xlarge" ng-model="set.val"/>
+            <input ng-show="!set.options.length && !set.multiline" type="text" class="form-control input-xlarge" ng-model="set.val"/>
+            <textarea ng-show="set.multiline" ng-model="set.val"></textarea>
             <div class="checkbox" ng-show="set.starred != undefined">
               <label>
                 <input type="checkbox" ng-model="set.starred"/>
@@ -1221,10 +1296,10 @@
   <div class="modal-body">
       <p>
         {{ 'To download the latest version of the project, add issues or to contribute back, head on to' | translate }}:<br />
-        <a href="https://github.com/ziahamza/webui-aria2">http://github.com/ziahamza/webui-aria2</a>
+        <a href="https://github.com/ziahamza/webui-aria2" target="_blank">https://github.com/ziahamza/webui-aria2</a>
         <br /><br />
         {{ 'Or you can open the latest version in the browser through' | translate }}:<br />
-        <a href="http://ziahamza.github.io/webui-aria2">http://ziahamza.github.io/webui-aria2</a>
+        <a href="https://ziahamza.github.io/webui-aria2" target="_blank">https://ziahamza.github.io/webui-aria2</a>
       </p>
   </div>
   <div class="modal-footer">

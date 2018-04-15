@@ -4,7 +4,7 @@ var webui = angular.module('webui', [
   'webui.services.modals', 'webui.services.alerts',
   'webui.services.settings', 'webui.services.settings.filters',
   'webui.filters.bytes','webui.filters.url',
-  'webui.directives.chunkbar', 'webui.directives.dgraph', 'webui.directives.fselect',
+  'webui.directives.chunkbar', 'webui.directives.dgraph', 'webui.directives.fselect', "webui.directives.fileselect",
   'webui.ctrls.download', 'webui.ctrls.nav', 'webui.ctrls.modal', 'webui.ctrls.alert',
   'webui.ctrls.props',
   // external deps
@@ -27,7 +27,7 @@ function mergeTranslation(translation, base) {
 	return translation;
 }
 
-webui.config(['$translateProvider', function ($translateProvider) {
+webui.config(function ($translateProvider, $locationProvider) {
   $translateProvider
       .translations('en_US', translations.en_US)
       .translations('nl_NL', mergeTranslation(translations.nl_NL, translations.en_US))
@@ -41,9 +41,17 @@ webui.config(['$translateProvider', function ($translateProvider) {
       .translations('ru_RU', mergeTranslation(translations.ru_RU, translations.en_US))
       .translations('it_IT', mergeTranslation(translations.it_IT, translations.en_US))
       .translations('tr_TR', mergeTranslation(translations.tr_TR, translations.en_US))
+      .translations('cs_CZ', mergeTranslation(translations.cs_CZ, translations.en_US))
+      .translations('fa_IR', mergeTranslation(translations.fa_IR, translations.en_US))
+      .translations('id_ID', mergeTranslation(translations.id_ID, translations.en_US))
       .useSanitizeValueStrategy('escapeParameters')
       .determinePreferredLanguage();
-}]);
+
+      $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false
+      });
+});
 
 $(function() {
   if (!String.prototype.startsWith) {
